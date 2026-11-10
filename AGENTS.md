@@ -1,31 +1,41 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
+## Project Structure & Architecture
 
-This workspace is an initial scaffold: no application source, tests, assets, or build manifests are currently present. The project name is `alphactl`, but its language and architecture have not yet been established.
+alphactl targets Linux on the Alienware Alpha R1 (ASM100), using Go 1.23+ without dependencies. The CLI communicates with the privileged daemon through JSON HTTP over a Unix socket; the daemon accesses the kernel's `alienware-wmi` sysfs interface.
 
-When adding the first implementation, organize code by responsibility and document the resulting layout here. Keep tests alongside their modules or in a clearly named `tests/` directory, and store static assets separately if needed. Avoid creating empty directories for components the project does not use.
+- `cmd/alphactl/`: user-facing CLI.
+- `cmd/alphactld/`: daemon startup, socket activation, and shutdown.
+- `internal/hardware/`: sysfs access, validation, colour conversion, and serialized hardware operations.
+- `internal/ipc/`: versioned HTTP handlers and Unix socket client.
+- `packaging/`: systemd service/socket units and sysusers group definition.
+- `integrations/omarchy/`: QML widget, JSON manifest/translations, and Lua keybinding examples.
+- `docs/ipc.md`: API contract; `bin/`: ignored build outputs.
 
 ## Build, Test, and Development Commands
 
-No build, test, lint, or local execution commands are currently configured. Do not assume commands such as `npm test` or `make build` work.
+- `make build`: build both binaries into `bin/`.
+- `make test`: run `go test -race ./...`; requires a C compiler.
+- `make check`: run `go vet` and check formatting; its `go fmt` invocation also reformats files.
+- `gofmt -w cmd internal`: format Go sources.
+- `./bin/alphactld --check`: read hardware status without starting a socket or changing settings.
+- `omarchy plugin validate integrations/omarchy/alphactl.control`: validate the plugin manifest.
+- `make install DESTDIR=/tmp/alphactl-stage`: stage installation files for review.
 
-When introducing tooling, provide reproducible setup instructions and record the exact commands in this guide or a root `README.md`. Include dependency installation, local execution, formatting, and test commands as applicable.
+Use `GOFLAGS=-buildvcs=false` if inaccessible Git metadata prevents builds. See `README.md` for installation and standalone daemon commands.
 
 ## Coding Style & Naming Conventions
 
-Follow the standard conventions of the language selected for the implementation. Use consistent indentation, descriptive names, and small modules with clear responsibilities. Add an appropriate formatter and linter with version-controlled configuration when the toolchain is established. Avoid unrelated formatting changes in functional patches.
+Use idiomatic Go, gofmt indentation, lowercase package names, and explicit error handling. Keep hardware access in `internal/hardware` and synchronize operations there. Preserve sysfs identifiers (`zone00`, `zone01`) and version API routes under `/v1/`. Follow existing two-space QML/JSON indentation. Pass CLI arguments as arrays in QML, render dynamic text as plain text, and place UI strings in `i18n/en.json`.
 
 ## Testing Guidelines
 
-No testing framework or coverage threshold is configured. Introduce tests with the first executable behavior, covering expected results, boundary cases, and failures. Use descriptive test names that identify the behavior under test, and document how contributors can run the suite.
+Use Go's standard `testing` package, colocated `*_test.go` files, and descriptive `Test...` names. Cover invalid input, colour quantization, missing attributes, HDMI state parsing, concurrency, and IPC behavior using temporary fake sysfs files. Automated tests must not change real hardware. No coverage threshold is configured; report physical verification separately.
 
 ## Commit & Pull Request Guidelines
 
-Git history is unavailable in this workspace, so no existing commit convention can be verified. Use concise, imperative commit subjects, such as `Add configuration parser`, and keep commits focused.
+History currently contains only `init commit`; no established convention exists. Use concise, imperative subjects and focused commits. PRs should explain behavior, validation, relevant issues, and limitations. Include screenshots for widget changes and update API documentation when contracts change.
 
-Pull requests should explain the change, its purpose, and how it was validated. Link relevant issues and include screenshots for visible interface changes. Clearly identify setup changes and any checks that could not be run.
+## Security & Hardware Boundaries
 
-## Security & Configuration
-
-Never commit credentials, tokens, or machine-specific secrets. Provide sanitized configuration examples and document required environment variables when configuration is introduced.
+Preserve the group-restricted socket and narrow service write access. Never accept caller-supplied filesystem paths through IPC. Keep startup read-only. Document partial writes and driver readback limitations; accepted sysfs writes do not guarantee firmware success. Do not commit secrets.
