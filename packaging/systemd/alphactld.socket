@@ -1,0 +1,13 @@
+[Unit]
+Description=Alienware Alpha control socket
+
+[Socket]
+ListenStream=/run/alphactl/control.sock
+SocketUser=root
+SocketGroup=alphactl
+SocketMode=0660
+DirectoryMode=0755
+RemoveOnStop=yes
+
+[Install]
+WantedBy=sockets.target

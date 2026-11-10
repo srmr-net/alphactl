@@ -1,0 +1,15 @@
+{
+  "title": "Alienware Alpha",
+  "unavailable": "Alpha daemon unavailable",
+  "status": "HDMI: %1 · brightness: %2/%3",
+  "toggle": "Toggle HDMI passthrough",
+  "gpu": "Return to GPU",
+  "applyColor": "Apply colour",
+  "applyBrightness": "Apply brightness",
+  "all": "Both zones",
+  "zone00": "Zone 00",
+  "zone01": "Zone 01",
+  "failed": "Command failed. Check alphactld in the system journal.",
+  "success": "Command accepted",
+  "colorHint": "RRGGBB (for example FF8000)"
+}
