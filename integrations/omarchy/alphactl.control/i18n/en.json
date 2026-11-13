@@ -23,5 +23,8 @@
   "blue": "Blue",
   "purple": "Purple",
   "white": "White",
-  "customRGB": "Custom RGB"
+  "customRGB": "Custom RGB",
+  "saveSetup": "Save setup",
+  "saved": "Setup saved for startup",
+  "loadFailed": "Could not load saved setup"
 }

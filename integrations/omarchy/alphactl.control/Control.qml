@@ -1,4 +1,6 @@
 import QtQuick
+import QtCore
+import Quickshell
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
 import Quickshell.Io
@@ -15,6 +17,61 @@ BarWidget {
   property int maxBrightness: 15
   property int pendingBrightness: -1
   property int commandRevision: 0
+  property var startupCommands: []
+
+  Settings {
+    id: saved
+    location: "file://" + Quickshell.env("HOME") + "/.config/alphactl-plugin.ini"
+    property string setup: ""
+  }
+
+  function saveSetup() {
+    const selectors = [sharedSelector, firstSelector, secondSelector]
+    saved.setup = JSON.stringify({version: 1, brightness: root.brightness,
+      sameColor: root.sameColor,
+      selectors: selectors.map(item => ({choice: item.choiceKey, rgb: item.customRGB}))})
+    saved.sync()
+    root.feedback = "saved"
+  }
+
+  function loadSetup() {
+    if (!saved.setup || saved.setup.length > 4096) return
+    try {
+      const config = JSON.parse(saved.setup)
+      if (config.version !== 1 || typeof config.sameColor !== "boolean"
+          || !Number.isInteger(config.brightness) || config.brightness < 0 || config.brightness > 15
+          || !Array.isArray(config.selectors) || config.selectors.length !== 3) return
+      const selectors = [sharedSelector, firstSelector, secondSelector]
+      for (let i = 0; i < 3; i++) {
+        const entry = config.selectors[i]
+        if (!entry || typeof entry.choice !== "string" || typeof entry.rgb !== "string"
+            || (entry.rgb !== "" && !/^#?[0-9a-fA-F]{6}$/.test(entry.rgb))
+            || !selectors[i].choices.some(choice => choice.key === entry.choice)) return
+      }
+      for (let i = 0; i < 3; i++) selectors[i].restore(config.selectors[i].choice, config.selectors[i].rgb)
+      root.sameColor = config.sameColor
+      const commands = [["brightness", String(config.brightness)]]
+      if (root.sameColor) {
+        if (sharedSelector.validSelection) commands.push(["led", "all", sharedSelector.selectedRGB])
+      } else {
+        if (firstSelector.validSelection) commands.push(["led", "zone00", firstSelector.selectedRGB])
+        if (secondSelector.validSelection) commands.push(["led", "zone01", secondSelector.selectedRGB])
+      }
+      root.startupCommands = commands
+    } catch (e) { root.feedback = "loadFailed" }
+  }
+
+  Timer {
+    interval: 100
+    running: root.startupCommands.length > 0
+    repeat: true
+    onTriggered: {
+      if (mutation.running) return
+      const commands = root.startupCommands.slice()
+      root.execute(commands.shift())
+      root.startupCommands = commands
+    }
+  }
 
   Timer {
     id: brightnessTimer
@@ -62,7 +119,7 @@ BarWidget {
     mutation.command = ["alphactl"].concat(args)
     mutation.running = true
   }
-  Component.onCompleted: refresh()
+  Component.onCompleted: { refresh(); Qt.callLater(loadSetup) }
 
   Process {
     id: query
@@ -204,6 +261,7 @@ BarWidget {
         onToggled: root.sameColor = checked
       }
       ColorSelector {
+        id: sharedSelector
         Layout.fillWidth: true
         visible: root.sameColor
         active: root.sameColor
@@ -212,6 +270,7 @@ BarWidget {
         onApplyRequested: function(rgb) { root.execute(["led", "all", rgb]) }
       }
       ColorSelector {
+        id: firstSelector
         Layout.fillWidth: true
         visible: !root.sameColor
         active: !root.sameColor
@@ -221,6 +280,7 @@ BarWidget {
         onApplyRequested: function(rgb) { root.execute(["led", "zone00", rgb]) }
       }
       ColorSelector {
+        id: secondSelector
         Layout.fillWidth: true
         visible: !root.sameColor
         active: !root.sameColor
@@ -228,6 +288,22 @@ BarWidget {
         busy: mutation.running
         catalog: strings
         onApplyRequested: function(rgb) { root.execute(["led", "zone01", rgb]) }
+      }
+      Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 1
+        Layout.topMargin: 8
+        Layout.bottomMargin: 8
+        color: Commons.Color.foreground
+        opacity: 0.25
+      }
+      Controls.Button {
+        text: strings.t("saveSetup")
+        enabled: root.healthy && !mutation.running && root.pendingBrightness < 0
+          && root.startupCommands.length === 0
+          && (root.sameColor ? sharedSelector.validSelection
+              : firstSelector.validSelection && secondSelector.validSelection)
+        onClicked: root.saveSetup()
       }
       Text {
         Layout.fillWidth: true

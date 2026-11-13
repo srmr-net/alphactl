@@ -100,8 +100,14 @@ keeps its selection while switching modes. The dropdown offers theme accent,
 foreground, background, urgent, and muted colours, common colours, and **Custom RGB**.
 A row of common-colour swatches provides quick selection. Presets apply automatically;
 theme selections follow theme changes. **Custom RGB** enables manual entry and
-**Apply colour**. Selections last for the current shell session; brightness remains
-independently controlled.
+**Apply colour**. Brightness remains independently controlled. Click **Save setup** to remember
+brightness, shared/independent mode, and all three selectors (including custom RGB).
+The plugin restores and applies this snapshot when the Omarchy shell loads it,
+including after login or a plugin reload. Unsaved changes are temporary. Theme
+choices resolve against the current theme on startup. Settings are stored in
+`~/.config/alphactl-plugin.ini`; delete that file to stop restoring a saved setup.
+The daemon and socket must be available and the shell must have group access for
+startup commands to succeed. Saving does not configure system-wide boot defaults.
 Status refreshes when opened and every three seconds while open.
 Failures appear in the panel. The shell must inherit the `alphactl` group.
 The widget uses the CLI from `PATH` and the default socket.
@@ -133,7 +139,8 @@ Standalone sockets are `0600`; use a private directory for shared machines.
 `--sysfs-root PATH` on the daemon allows a disposable fake sysfs tree.
 Existing sockets are never removed to make room for a second daemon.
 
-Settings are not persisted or reapplied after reboot/resume. LED readback is
+The daemon does not persist settings or reapply them after reboot/resume; the
+Omarchy plugin can restore an explicitly saved setup when the shell starts. LED readback is
 the kernel's cached state, not a hardware measurement. Setting both zones involves
 two writes; a failure may leave only one changed. Some driver versions log
 firmware errors without returning them to userspace, so `OK` means the sysfs

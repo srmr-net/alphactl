@@ -27,6 +27,18 @@ ColumnLayout {
     ? (colorInput.acceptableInput ? "#" + colorInput.text.replace(/^#/, "") : "transparent")
     : choices[picker.currentIndex].value
   readonly property string selectedRGB: selectedColor.toString().slice(-6)
+  readonly property string choiceKey: choices[picker.currentIndex].key
+  readonly property string customRGB: colorInput.text
+  readonly property bool validSelection: !custom || colorInput.acceptableInput
+
+  function restore(choice, rgb) {
+    const index = choices.findIndex(entry => entry.key === choice)
+    if (index < 0 || typeof rgb !== "string" || (rgb !== "" && !/^#?[0-9a-fA-F]{6}$/.test(rgb))) return false
+    picker.currentIndex = index
+    colorInput.text = rgb
+    return true
+  }
+
   signal applyRequested(string rgb)
   spacing: 8
 
