@@ -94,8 +94,11 @@ Click **α** for brightness and zone colour controls. The brightness slider at t
 top applies changes automatically; a divider separates it from the colour controls.
 Zone 00 and Zone 01 swatches show the kernel-cached colours above the colour controls
 (empty swatches indicate unavailable readback). The status line shows brightness only; use the CLI or keybindings to switch HDMI.
-Enable **Use theme accent colour** to apply the current Omarchy accent to
-the selected zone (or both zones) and follow theme changes automatically. Turning
+Below the zone swatches, **Use same colour for both zones** switches between a
+single shared selector and independent Zone 00/Zone 01 selectors. Each selector
+keeps its manual RGB entry and theme-accent choice while switching modes. Use
+**Apply colour** to apply a manual value. Enable **Use theme accent colour** to
+apply the current Omarchy accent and follow theme changes automatically. Turning
 it off restores manual RGB entry without changing the LEDs. The toggle lasts
 for the current shell session; brightness remains independently controlled.
 Status refreshes when opened and every three seconds while open.

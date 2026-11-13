@@ -4,6 +4,7 @@
   "status": "Brightness: %1/%2",
   "useThemeAccent": "Use theme accent colour",
   "applyColor": "Apply colour",
+  "sameColor": "Use same colour for both zones",
   "all": "Both zones",
   "zone00": "Zone 00",
   "zone01": "Zone 01",

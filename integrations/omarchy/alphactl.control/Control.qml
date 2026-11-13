@@ -40,31 +40,7 @@ BarWidget {
   }
 
   property string feedback: ""
-  property bool useThemeAccent: false
-  readonly property string accentRGB: Commons.Color.accent.toString().slice(-6)
-  readonly property string selectedZone: ["all", "zone00", "zone01"][zone.currentIndex]
-  onAccentRGBChanged: scheduleAccent()
-  onSelectedZoneChanged: scheduleAccent()
-  onUseThemeAccentChanged: {
-    if (useThemeAccent) scheduleAccent()
-    else accentTimer.stop()
-  }
-
-  function scheduleAccent() {
-    if (useThemeAccent) accentTimer.restart()
-  }
-
-  // Coalesce theme updates and wait for any in-flight CLI command.
-  Timer {
-    id: accentTimer
-    interval: 150
-    onTriggered: {
-      if (!root.useThemeAccent) return
-      if (mutation.running) { restart(); return }
-      if (/^[0-9a-fA-F]{6}$/.test(root.accentRGB))
-        root.execute(["led", root.selectedZone, root.accentRGB])
-    }
-  }
+  property bool sameColor: true
   readonly property string statusLabel: healthy
     ? strings.t("status").arg(Commons.I18n.formatNumber(brightness))
         .arg(Commons.I18n.formatNumber(maxBrightness))
@@ -222,39 +198,36 @@ BarWidget {
           radius: 3
         }
       }
-      Controls.ComboBox {
-        id: zone
-        model: [strings.t("all"), strings.t("zone00"), strings.t("zone01")]
+      Controls.Switch {
+        text: strings.t("sameColor")
+        checked: root.sameColor
+        onToggled: root.sameColor = checked
       }
-      RowLayout {
-        spacing: 8
-        Controls.Switch {
-          text: strings.t("useThemeAccent")
-          checked: root.useThemeAccent
-          onToggled: root.useThemeAccent = checked
-        }
-        Rectangle {
-          Layout.preferredWidth: 20
-          Layout.preferredHeight: 20
-          Layout.alignment: Qt.AlignVCenter
-          color: Commons.Color.accent
-          border.color: Commons.Color.foreground
-          border.width: 1
-          radius: 3
-        }
-      }
-      Controls.TextField {
-        id: colorInput
-        enabled: !root.useThemeAccent
+      ColorSelector {
         Layout.fillWidth: true
-        placeholderText: strings.t("colorHint")
-        maximumLength: 7
-        validator: RegularExpressionValidator { regularExpression: /#?[0-9a-fA-F]{6}/ }
+        visible: root.sameColor
+        active: root.sameColor
+        busy: mutation.running
+        catalog: strings
+        onApplyRequested: function(rgb) { root.execute(["led", "all", rgb]) }
       }
-      Controls.Button {
-        text: strings.t("applyColor")
-        enabled: (root.useThemeAccent || colorInput.acceptableInput) && !mutation.running
-        onClicked: root.execute(["led", root.selectedZone, root.useThemeAccent ? root.accentRGB : colorInput.text])
+      ColorSelector {
+        Layout.fillWidth: true
+        visible: !root.sameColor
+        active: !root.sameColor
+        title: strings.t("zone00")
+        busy: mutation.running
+        catalog: strings
+        onApplyRequested: function(rgb) { root.execute(["led", "zone00", rgb]) }
+      }
+      ColorSelector {
+        Layout.fillWidth: true
+        visible: !root.sameColor
+        active: !root.sameColor
+        title: strings.t("zone01")
+        busy: mutation.running
+        catalog: strings
+        onApplyRequested: function(rgb) { root.execute(["led", "zone01", rgb]) }
       }
       Text {
         Layout.fillWidth: true
