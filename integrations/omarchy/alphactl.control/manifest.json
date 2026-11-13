@@ -4,12 +4,12 @@
   "name": "Alienware Alpha",
   "version": "0.1.0",
   "author": "alphactl contributors",
-  "description": "Front LED colours, brightness controls, and HDMI status via alphactld.",
+  "description": "Front LED colours and brightness controls via alphactld.",
   "kinds": ["bar-widget"],
   "entryPoints": {"barWidget": "Control.qml"},
   "barWidget": {
     "displayName": "Alienware Alpha",
-    "description": "LED controls and HDMI status",
+    "description": "LED colour and brightness controls",
     "category": "Hardware",
     "defaultSection": "right",
     "allowMultiple": false

@@ -91,8 +91,9 @@ omarchy plugin enable alphactl.control
 ```
 
 Click **α** for brightness and zone colour controls. The brightness slider at the
-top applies changes automatically; a divider separates it from the colour controls. The status line shows the
-HDMI source and brightness; use the CLI or keybindings to switch HDMI.
+top applies changes automatically; a divider separates it from the colour controls.
+Zone 00 and Zone 01 swatches show the kernel-cached colours above the colour controls
+(empty swatches indicate unavailable readback). The status line shows brightness only; use the CLI or keybindings to switch HDMI.
 Enable **Use theme accent colour** to apply the current Omarchy accent to
 the selected zone (or both zones) and follow theme changes automatically. Turning
 it off restores manual RGB entry without changing the LEDs. The toggle lasts

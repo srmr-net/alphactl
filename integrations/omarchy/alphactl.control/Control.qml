@@ -26,6 +26,19 @@ BarWidget {
       root.pendingBrightness = -1
     }
   }
+  property color zone00Color: "transparent"
+  property color zone01Color: "transparent"
+
+  function zoneColor(raw) {
+    if (typeof raw !== "string" || raw.length > 100) return "transparent"
+    const match = /^red: (\d{1,2}), green: (\d{1,2}), blue: (\d{1,2})$/.exec(raw)
+    if (!match) return "transparent"
+    const channels = [Number(match[1]), Number(match[2]), Number(match[3])]
+    if (channels.some(value => value > 15)) return "transparent"
+    // The driver reports four-bit channels; expand them for the preview.
+    return Qt.rgba(channels[0] / 15, channels[1] / 15, channels[2] / 15, 1)
+  }
+
   property string feedback: ""
   property bool useThemeAccent: false
   readonly property string accentRGB: Commons.Color.accent.toString().slice(-6)
@@ -53,8 +66,8 @@ BarWidget {
     }
   }
   readonly property string statusLabel: healthy
-    ? strings.t("status").arg(source === "input" ? "HDMI IN" : source === "gpu" ? "GPU" : "?")
-        .arg(Commons.I18n.formatNumber(brightness)).arg(Commons.I18n.formatNumber(maxBrightness))
+    ? strings.t("status").arg(Commons.I18n.formatNumber(brightness))
+        .arg(Commons.I18n.formatNumber(maxBrightness))
     : strings.t("unavailable")
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
@@ -90,6 +103,10 @@ BarWidget {
               || !Number.isInteger(s.brightness) || !Number.isInteger(s.max_brightness)
               || s.brightness < 0 || s.brightness > 15 || s.max_brightness !== 15) { root.healthy = false; return }
           root.source = s.source
+          if (query.revision === root.commandRevision && !mutation.running) {
+            root.zone00Color = root.zoneColor(s.zones ? s.zones.zone00 : null)
+            root.zone01Color = root.zoneColor(s.zones ? s.zones.zone01 : null)
+          }
           if (!level.pressed && root.pendingBrightness < 0 && !mutation.running
               && query.revision === root.commandRevision)
             root.brightness = s.brightness
@@ -174,6 +191,36 @@ BarWidget {
         Layout.bottomMargin: 8
         color: Commons.Color.foreground
         opacity: 0.25
+      }
+      RowLayout {
+        spacing: 8
+        Text {
+          textFormat: Text.PlainText
+          color: Commons.Color.foreground
+          text: strings.t("zone00")
+        }
+        Rectangle {
+          Layout.preferredWidth: 20
+          Layout.preferredHeight: 20
+          color: root.healthy ? root.zone00Color : "transparent"
+          border.color: Commons.Color.foreground
+          border.width: 1
+          radius: 3
+        }
+        Item { Layout.preferredWidth: 8 }
+        Text {
+          textFormat: Text.PlainText
+          color: Commons.Color.foreground
+          text: strings.t("zone01")
+        }
+        Rectangle {
+          Layout.preferredWidth: 20
+          Layout.preferredHeight: 20
+          color: root.healthy ? root.zone01Color : "transparent"
+          border.color: Commons.Color.foreground
+          border.width: 1
+          radius: 3
+        }
       }
       Controls.ComboBox {
         id: zone

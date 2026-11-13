@@ -1,7 +1,7 @@
 {
   "title": "Alienware Alpha",
   "unavailable": "Alpha daemon unavailable",
-  "status": "HDMI: %1 · brightness: %2/%3",
+  "status": "Brightness: %1/%2",
   "useThemeAccent": "Use theme accent colour",
   "applyColor": "Apply colour",
   "all": "Both zones",
