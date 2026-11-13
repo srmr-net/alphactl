@@ -22,7 +22,7 @@ alphactl targets Linux on the Alienware Alpha R1 (ASM100), using Go 1.23+ withou
 - `omarchy plugin validate integrations/omarchy/alphactl.control`: validate the plugin manifest.
 - `make install DESTDIR=/tmp/alphactl-stage`: stage installation files for review.
 
-Use `GOFLAGS=-buildvcs=false` if inaccessible Git metadata prevents builds. See `README.md` for installation and standalone daemon commands.
+Use `GOFLAGS=-buildvcs=false` if inaccessible Git metadata prevents builds. See `INSTALL.md` for installation and `README.md` for standalone daemon commands.
 
 ## Coding Style & Naming Conventions
 

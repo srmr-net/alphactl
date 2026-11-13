@@ -4,8 +4,7 @@ Licensed under the [MIT License](LICENSE).
 
 Go service and CLI for the **Alienware Alpha R1 (ASM100)** front LEDs and
 HDMI input passthrough, with an Omarchy shell widget. Linux only; no Go module
-dependencies. This is an initial implementation, not yet validated with physical
-LED changes or an HDMI input device.
+dependencies.
 
 ## Architecture and access
 
@@ -39,26 +38,12 @@ commands with `GOFLAGS=-buildvcs=false` to disable Go's automatic VCS stamping.
 Sources are in `cmd/`, `internal/hardware/`, and `internal/ipc/`. Tests use temporary
 files, never real hardware. Format Go changes with `gofmt`.
 
-## Install on this system
+## Installation
 
-Run these in a terminal. Build as your normal user; sudo may not include Go in
-its PATH. Installation and adding group membership need root; subsequent CLI
-and widget commands do not. Rebuild before installing updated sources.
+See [INSTALL.md](INSTALL.md) for prerequisites, installation, group access,
+Omarchy setup, HDMI keybindings, and troubleshooting.
 
-```sh
-make build
-sudo make install
-sudo systemd-sysusers /usr/lib/sysusers.d/alphactl.conf
-sudo usermod -aG alphactl "$USER"
-sudo systemctl daemon-reload
-sudo systemctl enable --now alphactld.socket
-```
-
-Log out completely and back in to apply the group to the desktop session.
-The first client connection starts `alphactld.service`. Nothing changes on
-hardware merely by starting the service. If sysfs is missing, inspect
-`ls /sys/devices/platform/alienware-wmi` and try `sudo modprobe alienware-wmi`.
-Do not force driver quirks for unrelated models.
+## CLI usage
 
 ```sh
 alphactl status
@@ -81,14 +66,7 @@ Brightness 0 turns LEDs off; increase it to restore visibility.
 
 ## Omarchy integration
 
-This plugin targets the installed Quickshell-based Omarchy shell with `qs.Ui`.
-Copy the directory, then enable it:
-
-```sh
-mkdir -p ~/.config/omarchy/plugins
-cp -r integrations/omarchy/alphactl.control ~/.config/omarchy/plugins/
-omarchy plugin enable alphactl.control
-```
+See [Omarchy setup](INSTALL.md#omarchy-plugin) to install or update the widget.
 
 Click **α** for brightness and zone colour controls. The brightness slider at the
 top applies changes automatically; a divider separates it from the colour controls.
@@ -112,17 +90,6 @@ Status refreshes when opened and every three seconds while open.
 Failures appear in the panel. The shell must inherit the `alphactl` group.
 The widget uses the CLI from `PATH` and the default socket.
 
-Check `omarchy menu keybindings --print` before copying the examples in
-`integrations/omarchy/bindings.lua` into `~/.config/hypr/bindings.lua`:
-
-```lua
-o.bind("SUPER + CTRL + H", "Alpha HDMI passthrough", "alphactl hdmi toggle")
-o.bind("SUPER + CTRL + A", "Alpha HDMI GPU", "alphactl hdmi gpu")
-```
-
-Use `o.rebind` if a chosen key already exists. Validate with `hyprctl reload`
-and `hyprctl configerrors`. No desktop settings are changed by `make install`.
-
 ## Development and limitations
 
 For read-only hardware inspection without installation:
@@ -145,11 +112,6 @@ the kernel's cached state, not a hardware measurement. Setting both zones involv
 two writes; a failure may leave only one changed. Some driver versions log
 firmware errors without returning them to userspace, so `OK` means the sysfs
 write was accepted. Visually verify LEDs and check HDMI status after changes.
-
-Inspect failures with `systemctl status alphactld.socket alphactld.service`,
-`journalctl -u alphactld.service`, and `id`. To disable the daemon, stop both
-units: `sudo systemctl disable --now alphactld.socket` followed by
-`sudo systemctl stop alphactld.service`.
 
 See [IPC reference](docs/ipc.md) for the API. Hardware behavior was checked against
 the upstream [Alienware LED driver](https://raw.githubusercontent.com/torvalds/linux/master/drivers/platform/x86/dell/alienware-wmi-base.c)
