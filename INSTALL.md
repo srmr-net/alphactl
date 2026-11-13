@@ -69,6 +69,14 @@ o.bind("SUPER + CTRL + A", "Alpha HDMI GPU", "alphactl hdmi gpu")
 Use `o.rebind` if a chosen key already exists. Validate with `hyprctl reload`
 and `hyprctl configerrors`. No desktop settings are changed by `make install`.
 
+Personally, I just rebind "Toggle laptop display on/off" to HDMI Passthrough:
+
+```lua
+hl.unbind("SUPER + CTRL + Delete")
+o.bind("SUPER + CTRL + Delete", "Toggle HDMI Passthrough", "alphactl hdmi toggle")
+```
+
+
 ## Troubleshooting
 
 If `sudo make install` reports missing binaries, run `make build` as your normal
