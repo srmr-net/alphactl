@@ -15,7 +15,8 @@ check:
 	$(GO) vet ./...
 	test -z "$$($(GO) fmt ./...)"
 
-install: build
+install:
+	@test -f bin/alphactl -a -f bin/alphactld || { echo "Build binaries as your normal user first: make build" >&2; exit 1; }
 	install -Dm755 bin/alphactl $(DESTDIR)$(PREFIX)/bin/alphactl
 	install -Dm755 bin/alphactld $(DESTDIR)$(PREFIX)/bin/alphactld
 	install -Dm644 packaging/systemd/alphactld.service $(DESTDIR)$(PREFIX)/lib/systemd/system/alphactld.service

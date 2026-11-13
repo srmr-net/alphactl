@@ -41,10 +41,12 @@ files, never real hardware. Format Go changes with `gofmt`.
 
 ## Install on this system
 
-Run these in a terminal. Initial installation and adding group membership need
-root; subsequent CLI and widget commands do not.
+Run these in a terminal. Build as your normal user; sudo may not include Go in
+its PATH. Installation and adding group membership need root; subsequent CLI
+and widget commands do not. Rebuild before installing updated sources.
 
 ```sh
+make build
 sudo make install
 sudo systemd-sysusers /usr/lib/sysusers.d/alphactl.conf
 sudo usermod -aG alphactl "$USER"
