@@ -13,7 +13,45 @@ BarWidget {
   property string source: "unknown"
   property int brightness: 0
   property int maxBrightness: 15
+  property int pendingBrightness: -1
+  property int commandRevision: 0
+
+  Timer {
+    id: brightnessTimer
+    interval: 60
+    onTriggered: {
+      if (mutation.running) { restart(); return }
+      const value = root.pendingBrightness
+      if (value >= 0) root.execute(["brightness", String(value)])
+      root.pendingBrightness = -1
+    }
+  }
   property string feedback: ""
+  property bool useThemeAccent: false
+  readonly property string accentRGB: Commons.Color.accent.toString().slice(-6)
+  readonly property string selectedZone: ["all", "zone00", "zone01"][zone.currentIndex]
+  onAccentRGBChanged: scheduleAccent()
+  onSelectedZoneChanged: scheduleAccent()
+  onUseThemeAccentChanged: {
+    if (useThemeAccent) scheduleAccent()
+    else accentTimer.stop()
+  }
+
+  function scheduleAccent() {
+    if (useThemeAccent) accentTimer.restart()
+  }
+
+  // Coalesce theme updates and wait for any in-flight CLI command.
+  Timer {
+    id: accentTimer
+    interval: 150
+    onTriggered: {
+      if (!root.useThemeAccent) return
+      if (mutation.running) { restart(); return }
+      if (/^[0-9a-fA-F]{6}$/.test(root.accentRGB))
+        root.execute(["led", root.selectedZone, root.accentRGB])
+    }
+  }
   readonly property string statusLabel: healthy
     ? strings.t("status").arg(source === "input" ? "HDMI IN" : source === "gpu" ? "GPU" : "?")
         .arg(Commons.I18n.formatNumber(brightness)).arg(Commons.I18n.formatNumber(maxBrightness))
@@ -31,6 +69,7 @@ BarWidget {
   function execute(args) {
     if (mutation.running) return
     feedback = ""
+    commandRevision++
     mutation.command = ["alphactl"].concat(args)
     mutation.running = true
   }
@@ -38,22 +77,25 @@ BarWidget {
 
   Process {
     id: query
+    property int revision: 0
+    onRunningChanged: if (running) revision = root.commandRevision
     command: ["alphactl", "--json", "status"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
-        root.healthy = false
-        if (text.length > 65536) return
+        if (text.length > 65536) { root.healthy = false; return }
         try {
           const s = JSON.parse(text)
           if (!["input", "gpu", "unknown"].includes(s.source)
               || !Number.isInteger(s.brightness) || !Number.isInteger(s.max_brightness)
-              || s.brightness < 0 || s.brightness > 15 || s.max_brightness !== 15) return
+              || s.brightness < 0 || s.brightness > 15 || s.max_brightness !== 15) { root.healthy = false; return }
           root.source = s.source
-          root.brightness = s.brightness
+          if (!level.pressed && root.pendingBrightness < 0 && !mutation.running
+              && query.revision === root.commandRevision)
+            root.brightness = s.brightness
           root.maxBrightness = s.max_brightness
           root.healthy = true
-        } catch (e) {}
+        } catch (e) { root.healthy = false }
       }
     }
     onExited: function(code, status) { if (code !== 0 || status !== 0) root.healthy = false }
@@ -79,8 +121,10 @@ BarWidget {
     text: "α"
     tooltipText: strings.t("title")
     onPressed: function(mouseButton) {
-      if (mouseButton === Qt.RightButton) root.execute(["hdmi", "toggle"])
-      else { root.opened = !root.opened; if (root.opened) root.refresh() }
+      if (mouseButton === Qt.LeftButton) {
+        root.opened = !root.opened
+        if (root.opened) root.refresh()
+      }
     }
   }
   KeyboardPanel {
@@ -102,22 +146,59 @@ BarWidget {
         text: root.statusLabel
         wrapMode: Text.Wrap
       }
-      Controls.Button {
-        text: strings.t("toggle")
-        enabled: root.healthy && !mutation.running
-        onClicked: root.execute(["hdmi", "toggle"])
+      Controls.Slider {
+        id: level
+        Layout.fillWidth: true
+        from: 0
+        to: root.maxBrightness
+        stepSize: 1
+        snapMode: Controls.Slider.SnapAlways
+        enabled: root.healthy
+        onMoved: {
+          root.pendingBrightness = Math.round(value)
+          root.brightness = root.pendingBrightness
+          brightnessTimer.restart()
+        }
       }
-      Controls.Button {
-        text: strings.t("gpu")
-        enabled: !mutation.running
-        onClicked: root.execute(["hdmi", "gpu"])
+      Binding {
+        target: level
+        property: "value"
+        value: root.brightness
+        when: !level.pressed && root.pendingBrightness < 0 && !mutation.running
+        restoreMode: Binding.RestoreNone
+      }
+      Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 1
+        Layout.topMargin: 8
+        Layout.bottomMargin: 8
+        color: Commons.Color.foreground
+        opacity: 0.25
       }
       Controls.ComboBox {
         id: zone
         model: [strings.t("all"), strings.t("zone00"), strings.t("zone01")]
       }
+      RowLayout {
+        spacing: 8
+        Controls.Switch {
+          text: strings.t("useThemeAccent")
+          checked: root.useThemeAccent
+          onToggled: root.useThemeAccent = checked
+        }
+        Rectangle {
+          Layout.preferredWidth: 20
+          Layout.preferredHeight: 20
+          Layout.alignment: Qt.AlignVCenter
+          color: Commons.Color.accent
+          border.color: Commons.Color.foreground
+          border.width: 1
+          radius: 3
+        }
+      }
       Controls.TextField {
         id: colorInput
+        enabled: !root.useThemeAccent
         Layout.fillWidth: true
         placeholderText: strings.t("colorHint")
         maximumLength: 7
@@ -125,19 +206,8 @@ BarWidget {
       }
       Controls.Button {
         text: strings.t("applyColor")
-        enabled: colorInput.acceptableInput && !mutation.running
-        onClicked: root.execute(["led", ["all", "zone00", "zone01"][zone.currentIndex], colorInput.text])
-      }
-      Controls.SpinBox {
-        id: level
-        from: 0
-        to: 15
-        value: root.brightness
-      }
-      Controls.Button {
-        text: strings.t("applyBrightness")
-        enabled: !mutation.running
-        onClicked: root.execute(["brightness", String(level.value)])
+        enabled: (root.useThemeAccent || colorInput.acceptableInput) && !mutation.running
+        onClicked: root.execute(["led", root.selectedZone, root.useThemeAccent ? root.accentRGB : colorInput.text])
       }
       Text {
         Layout.fillWidth: true

@@ -90,8 +90,14 @@ cp -r integrations/omarchy/alphactl.control ~/.config/omarchy/plugins/
 omarchy plugin enable alphactl.control
 ```
 
-Click **α** for zone colour, brightness, and HDMI controls; right-click toggles
-HDMI. Status refreshes when opened and every three seconds while open.
+Click **α** for brightness and zone colour controls. The brightness slider at the
+top applies changes automatically; a divider separates it from the colour controls. The status line shows the
+HDMI source and brightness; use the CLI or keybindings to switch HDMI.
+Enable **Use theme accent colour** to apply the current Omarchy accent to
+the selected zone (or both zones) and follow theme changes automatically. Turning
+it off restores manual RGB entry without changing the LEDs. The toggle lasts
+for the current shell session; brightness remains independently controlled.
+Status refreshes when opened and every three seconds while open.
 Failures appear in the panel. The shell must inherit the `alphactl` group.
 The widget uses the CLI from `PATH` and the default socket.
 
