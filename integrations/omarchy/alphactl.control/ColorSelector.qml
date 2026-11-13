@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
@@ -9,27 +10,41 @@ ColumnLayout {
   property string title: ""
   property bool active: true
   property bool busy: false
-  property bool useThemeAccent: false
-  readonly property string accentRGB: Commons.Color.accent.toString().slice(-6)
+  readonly property var choices: [
+    {key: "themeAccent", value: Commons.Color.accent},
+    {key: "themeForeground", value: Commons.Color.foreground},
+    {key: "themeBackground", value: Commons.Color.background},
+    {key: "themeUrgent", value: Commons.Color.urgent},
+    {key: "themeMuted", value: Commons.Color.muted},
+    {key: "red", value: "#ff0000"}, {key: "orange", value: "#ff8000"},
+    {key: "yellow", value: "#ffff00"}, {key: "green", value: "#00ff00"},
+    {key: "cyan", value: "#00ffff"}, {key: "blue", value: "#0000ff"},
+    {key: "purple", value: "#ff00ff"}, {key: "white", value: "#ffffff"},
+    {key: "customRGB", value: "transparent"}
+  ]
+  readonly property bool custom: picker.currentIndex === choices.length - 1
+  readonly property color selectedColor: custom
+    ? (colorInput.acceptableInput ? "#" + colorInput.text.replace(/^#/, "") : "transparent")
+    : choices[picker.currentIndex].value
+  readonly property string selectedRGB: selectedColor.toString().slice(-6)
   signal applyRequested(string rgb)
   spacing: 8
 
-  function scheduleAccent() {
-    if (active && useThemeAccent) accentTimer.restart()
-    else accentTimer.stop()
+  function schedulePreset() {
+    if (active && !custom) presetTimer.restart()
+    else presetTimer.stop()
   }
-  onActiveChanged: scheduleAccent()
-  onUseThemeAccentChanged: scheduleAccent()
-  onAccentRGBChanged: scheduleAccent()
+  onActiveChanged: schedulePreset()
+  onSelectedRGBChanged: schedulePreset()
 
   Timer {
-    id: accentTimer
+    id: presetTimer
     interval: 150
     onTriggered: {
-      if (!root.active || !root.useThemeAccent) return
+      if (!root.active || root.custom) return
       if (root.busy) { restart(); return }
-      if (/^[0-9a-fA-F]{6}$/.test(root.accentRGB))
-        root.applyRequested(root.accentRGB)
+      if (/^[0-9a-fA-F]{6}$/.test(root.selectedRGB))
+        root.applyRequested(root.selectedRGB)
     }
   }
   Text {
@@ -40,32 +55,61 @@ ColumnLayout {
   }
   RowLayout {
     spacing: 8
-    Controls.Switch {
-      text: root.catalog.t("useThemeAccent")
-      checked: root.useThemeAccent
-      onToggled: root.useThemeAccent = checked
+    Controls.ComboBox {
+      id: picker
+      Layout.fillWidth: true
+      model: root.choices.map(choice => root.catalog.t(choice.key))
+      currentIndex: root.choices.length - 1
+      onActivated: root.schedulePreset()
     }
     Rectangle {
       Layout.preferredWidth: 20
       Layout.preferredHeight: 20
       Layout.alignment: Qt.AlignVCenter
-      color: Commons.Color.accent
+      color: root.selectedColor
       border.color: Commons.Color.foreground
       border.width: 1
       radius: 3
     }
   }
+  RowLayout {
+    spacing: 6
+    Repeater {
+      model: root.choices.slice(5, 13)
+      delegate: Controls.Button {
+        id: swatch
+        required property var modelData
+        required property int index
+        implicitWidth: 28
+        implicitHeight: 28
+        padding: 4
+        Accessible.name: root.catalog.t(modelData.key)
+        contentItem: Rectangle {
+          color: swatch.modelData.value
+          border.color: Commons.Color.foreground
+          border.width: 1
+          radius: 3
+        }
+        onClicked: {
+          picker.currentIndex = index + 5
+          root.schedulePreset()
+        }
+      }
+    }
+  }
   Controls.TextField {
     id: colorInput
+    visible: root.custom
     Layout.fillWidth: true
-    enabled: !root.useThemeAccent
+    enabled: root.custom
     placeholderText: root.catalog.t("colorHint")
     maximumLength: 7
     validator: RegularExpressionValidator { regularExpression: /#?[0-9a-fA-F]{6}/ }
   }
   Controls.Button {
+    visible: root.custom
     text: root.catalog.t("applyColor")
-    enabled: root.active && (root.useThemeAccent || colorInput.acceptableInput) && !root.busy
-    onClicked: root.applyRequested(root.useThemeAccent ? root.accentRGB : colorInput.text)
+    enabled: root.active && (!root.custom || colorInput.acceptableInput) && !root.busy
+    onClicked: root.applyRequested(root.custom ? colorInput.text : root.selectedRGB)
   }
 }

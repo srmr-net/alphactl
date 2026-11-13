@@ -96,11 +96,12 @@ Zone 00 and Zone 01 swatches show the kernel-cached colours above the colour con
 (empty swatches indicate unavailable readback). The status line shows brightness only; use the CLI or keybindings to switch HDMI.
 Below the zone swatches, **Use same colour for both zones** switches between a
 single shared selector and independent Zone 00/Zone 01 selectors. Each selector
-keeps its manual RGB entry and theme-accent choice while switching modes. Use
-**Apply colour** to apply a manual value. Enable **Use theme accent colour** to
-apply the current Omarchy accent and follow theme changes automatically. Turning
-it off restores manual RGB entry without changing the LEDs. The toggle lasts
-for the current shell session; brightness remains independently controlled.
+keeps its selection while switching modes. The dropdown offers theme accent,
+foreground, background, urgent, and muted colours, common colours, and **Custom RGB**.
+A row of common-colour swatches provides quick selection. Presets apply automatically;
+theme selections follow theme changes. **Custom RGB** enables manual entry and
+**Apply colour**. Selections last for the current shell session; brightness remains
+independently controlled.
 Status refreshes when opened and every three seconds while open.
 Failures appear in the panel. The shell must inherit the `alphactl` group.
 The widget uses the CLI from `PATH` and the default socket.

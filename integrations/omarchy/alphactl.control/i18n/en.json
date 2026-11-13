@@ -2,7 +2,6 @@
   "title": "Alienware Alpha",
   "unavailable": "Alpha daemon unavailable",
   "status": "Brightness: %1/%2",
-  "useThemeAccent": "Use theme accent colour",
   "applyColor": "Apply colour",
   "sameColor": "Use same colour for both zones",
   "all": "Both zones",
@@ -10,5 +9,19 @@
   "zone01": "Zone 01",
   "failed": "Command failed. Check alphactld in the system journal.",
   "success": "Command accepted",
-  "colorHint": "RRGGBB (for example FF8000)"
+  "colorHint": "RRGGBB (for example FF8000)",
+  "themeAccent": "Theme: Accent",
+  "themeForeground": "Theme: Foreground",
+  "themeBackground": "Theme: Background",
+  "themeUrgent": "Theme: Urgent",
+  "themeMuted": "Theme: Muted",
+  "red": "Red",
+  "orange": "Orange",
+  "yellow": "Yellow",
+  "green": "Green",
+  "cyan": "Cyan",
+  "blue": "Blue",
+  "purple": "Purple",
+  "white": "White",
+  "customRGB": "Custom RGB"
 }
